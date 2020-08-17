@@ -1,11 +1,18 @@
 ﻿using System;
 using System.Data;
+using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
+using System.Xml.Serialization;
+using BookLib;
 using Microsoft.Azure.ServiceBus;
-
+using Newtonsoft.Json;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace RecieverApp
 {
@@ -48,11 +55,35 @@ namespace RecieverApp
 
             queueClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
 
-        } 
+        }
 
         static async Task ProcessMessagesAsync(Message message, CancellationToken token)
+
+
+
         {
-            Console.WriteLine($"Recieved Messages: SequenceNumber { message.SystemProperties.SequenceNumber} Body: { Encoding.UTF8.GetString(message.Body)}");
+            //Converting the message from queue to Json 
+            string bookJson = Encoding.UTF8.GetString(message.Body);
+
+            //Converting / Deserializing our json to the object of Book class we have
+            Books mybook = JsonConvert.DeserializeObject<Books>(bookJson);
+
+            //Converting the Json to XML format and getting on console
+            
+            XmlDocument xmlBook =(XmlDocument)JsonConvert.DeserializeXmlNode(bookJson, "root");
+
+            // Ignore: Console.WriteLine($"Recieved Messages: SequenceNumber { message.SystemProperties.SequenceNumber} Body: { Encoding.UTF8.GetString(message.Body)}");
+
+
+            //Getting output of all types on Console
+            Console.WriteLine($"Recieved Messages in Json form: { bookJson }");
+
+            Console.WriteLine($"Recieved Messages in XML form: { XDocument.Parse(xmlBook.InnerXml) }");
+
+            Console.WriteLine($"Recieved Messages in Object form: { mybook } where the id is {mybook.Id} and name is {mybook.Name}");
+
+
+            
 
             await queueClient.CompleteAsync(message.SystemProperties.LockToken);
         }
