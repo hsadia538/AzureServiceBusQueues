@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Text;
 using System.Threading.Tasks;
+using BookLib;
 using Microsoft.Azure.ServiceBus;
-
+using Json.Net;
+using Newtonsoft.Json;
 
 namespace SenderApp
 {
@@ -14,18 +16,34 @@ namespace SenderApp
         static IQueueClient queueClient;
 
         static async Task Main(string[] args)
+
         {
 
+            string id;
+            string message;
 
-            const int numberOfMessages = 10;
+            Console.WriteLine("Enter random id");
+            id = Console.ReadLine();
+
+            int ID = int.Parse(id);
+
+            Console.WriteLine("Enter name of book");
+            message = Console.ReadLine();
+
+            //making a book object to be converted in JSON
+            Books mybook = new Books(message, ID);
+
+            string bookJson = JsonConvert.SerializeObject(mybook);
+
+            //const int numberOfMessages = 10;
 
             queueClient = new QueueClient(ServiceBusConnectionString, QueueName);
 
-           
-            Console.WriteLine("Press ENTER key to exit after sending all the messages.");
-            
 
-            await SendMessageAsync(numberOfMessages);
+            Console.WriteLine("Press ENTER key to exit after sending all the messages.");
+
+
+            await SendMessageAsync(bookJson);
 
             Console.ReadKey();
 
@@ -33,23 +51,22 @@ namespace SenderApp
 
         }
 
-        static async Task SendMessageAsync( int numberOfMessagesSent)
+        static async Task SendMessageAsync(string jsonToSend)
         {
 
 
             try
             {
-                for ( var i=0; i < numberOfMessagesSent; i++)
-                {
-                    string messageBody = $"message {i}";
-
-                    var message = new Message(Encoding.UTF8.GetBytes(messageBody));
 
 
-                    Console.WriteLine($"Sending message : {messageBody}");
 
-                    await queueClient.SendAsync(message);
-                }
+                var message = new Message(Encoding.UTF8.GetBytes(jsonToSend));
+
+
+                Console.WriteLine($"Sending message : {jsonToSend}");
+
+                await queueClient.SendAsync(message);
+
 
             }
 
